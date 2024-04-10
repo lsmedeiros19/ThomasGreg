@@ -1,0 +1,150 @@
+﻿@model WebCliente.Models.Cliente
+@* @model IEnumerable<WebCliente.Models.Logradouro> *@
+
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h4>Cadastro de Cliente</h4>
+<hr />
+<div class="row">
+    <div id="errorDiv" style="display:none;" class="alert alert-danger"></div>
+
+    <div class="col-md-4">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Nome" class="control-label"></label>
+                <input asp-for="Nome" class="form-control" />
+                <span asp-validation-for="Nome" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Email" class="control-label"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group" id="logradouroContainer">
+                <label class="control-label">Logradouros</label>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" name="Logradouro" />
+                    <button type="button" class="btn btn-success" id="addLogradouro">Adicionar Logradouro</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label asp-for="Logotipo" class="control-label"></label>
+                <input asp-for="Logotipo" class="form-control" />
+                <span asp-validation-for="Logotipo" class="text-danger"></span>
+            </div>
+           @*  <div>
+                <table>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.Endereco)
+                                </td>
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@item.LogradouroId">Edit</a> |
+                                    <a asp-action="Details" asp-route-id="@item.LogradouroId">Details</a> |
+                                    <a asp-action="Delete" asp-route-id="@item.LogradouroId">Delete</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div> *@
+            <br />
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+        <br />
+        <div class="form-group">
+            <h3>Logradouros Adicionados</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Logradouro</th>
+                        <th scope="col">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="logradourosAdicionados">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+
+<script>
+
+    $(document).ready(function() {
+
+            $('#addLogradouro').click(function (e) {
+                e.preventDefault();
+                $('#logradouros').append('<input type="text" name="Logradouros" class="form-control" />');
+            });
+
+
+
+      $('form').submit(function(e) {
+        $('#errorDiv').empty().hide(); // Limpa e esconde o div de erro
+
+        e.preventDefault(); 
+
+                // var logradouro = { Endereco: $('#Logradouros').val() };
+                var logradouros = $('input[name="Logradouros"]').map(function () {
+                    return { Endereco: $(this).val() };
+                }).get();
+
+          $.ajax({
+              type: "POST",
+              url: "/api/Clientes",
+              contentType: "application/json",
+              data: JSON.stringify({
+                  Nome: $('#Nome').val(),
+                  Email: $('#Email').val(),
+                  Logotipo: $('#Logotipo').val(),
+                        Logradouros: logradouros
+                  // Logradouros: [logradouro]
+          }),
+          success: function(data) {
+            console.log("Cliente criado com sucesso", data);
+            // Redirecionar ou atualizar UI aqui
+          },
+          error: function (xhr, status, error) {
+            if (xhr.status === 409) { // Verifica se o status é 409 Conflito
+                var errorMsg = "E-mail já registrado."; // Mensagem de erro
+                $('#errorDiv').html(errorMsg).show(); // Insere a mensagem de erro no div e o torna visível
+            } else {
+                console.error("Erro ao criar cliente", error);
+            }
+          }
+        });
+      });
+    });
+    
+    document.getElementById('addLogradouro').addEventListener('click', function () {
+        var logradouro = document.querySelector('[name="Logradouro"]').value;
+        if (logradouro) {
+            var tableBody = document.getElementById('logradourosAdicionados');
+            var newRow = document.createElement('tr');
+            var seq = tableBody.children.length + 1;
+            newRow.innerHTML = '<th scope="row">' + seq + '</th><td>' + logradouro + '</td><td><button class="btn btn-danger btn-sm">Remover</button></td>';
+            tableBody.appendChild(newRow);
+            document.querySelector('[name="Logradouro"]').value = ''; // Limpa o campo após adicionar
+        } else {
+            // Mostrar algum erro ou mensagem de validação
+            alert('Por favor, insira um logradouro.');
+        }
+    });
+</script>
+}
